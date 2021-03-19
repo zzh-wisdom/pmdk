@@ -1412,7 +1412,7 @@ err:
 
 #ifndef _WIN32
 /*
- * pmemobj_create -- create a transactional memory pool (set)
+ * pmemobj_create -- create a transactional memory pool (set) 创建一个事务性内存池（集）
  */
 PMEMobjpool *
 pmemobj_create(const char *path, const char *layout,
@@ -2901,7 +2901,7 @@ pmemobj_root_construct(PMEMobjpool *pop, size_t size,
 }
 
 /*
- * pmemobj_root -- returns root object
+ * pmemobj_root -- returns root object  创建/分配一个根对象
  */
 PMEMoid
 pmemobj_root(PMEMobjpool *pop, size_t size)

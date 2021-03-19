@@ -88,7 +88,7 @@ struct pool_data {
 		struct pool_hdr pool;
 		struct pmemlog log;
 		struct pmemblk blk;
-	} hdr;
+	} hdr;  /// 头部
 	enum {
 		UUID_NOP = 0,
 		UUID_FROM_BTT,

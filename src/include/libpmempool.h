@@ -56,39 +56,39 @@ extern "C" {
 /* PMEMPOOL CHECK */
 
 /*
- * pool types
+ * pool types 池的类型
  */
 enum pmempool_pool_type {
 	PMEMPOOL_POOL_TYPE_DETECT,
-	PMEMPOOL_POOL_TYPE_LOG,
-	PMEMPOOL_POOL_TYPE_BLK,
-	PMEMPOOL_POOL_TYPE_OBJ,
-	PMEMPOOL_POOL_TYPE_BTT,
+	PMEMPOOL_POOL_TYPE_LOG,  // pmemlog pool 
+	PMEMPOOL_POOL_TYPE_BLK,  // BTT layout
+	PMEMPOOL_POOL_TYPE_OBJ,  // pmemobj pool
+	PMEMPOOL_POOL_TYPE_BTT,  // pmemblk pool
 	PMEMPOOL_POOL_TYPE_RESERVED1, /* used to be cto */
 };
 
 /*
- * perform repairs
+ * perform repairs 进行维修
  */
 #define PMEMPOOL_CHECK_REPAIR		(1U << 0)
 /*
- * emulate repairs
+ * emulate repairs 模拟维修
  */
 #define PMEMPOOL_CHECK_DRY_RUN		(1U << 1)
 /*
- * perform hazardous repairs
+ * perform hazardous repairs 进行危险维修
  */
 #define PMEMPOOL_CHECK_ADVANCED		(1U << 2)
 /*
- * do not ask before repairs
+ * do not ask before repairs 维修前不要询问用户
  */
 #define PMEMPOOL_CHECK_ALWAYS_YES	(1U << 3)
 /*
- * generate info statuses
+ * generate info statuses 生成信息状态
  */
 #define PMEMPOOL_CHECK_VERBOSE		(1U << 4)
 /*
- * generate string format statuses
+ * generate string format statuses 生成字符串格式状态
  */
 #define PMEMPOOL_CHECK_FORMAT_STR	(1U << 5)
 
@@ -134,16 +134,16 @@ enum pmempool_check_result pmempool_check_end(PMEMpoolcheck *ppc);
  */
 
 /*
- * fix bad blocks - it requires creating or reading special recovery files
+ * fix bad blocks - it requires creating or reading special recovery files 修复坏块-它需要创建或读取特殊的恢复文件
  */
 #define PMEMPOOL_SYNC_FIX_BAD_BLOCKS	(1U << 0)
 /*
- * do not apply changes, only check if operation is viable
+ * do not apply changes, only check if operation is viable 不进行实际的更改，仅检查操作是否可行
  */
 #define PMEMPOOL_SYNC_DRY_RUN		(1U << 1)
 
 /*
- * LIBPMEMPOOL TRANSFORM
+ * LIBPMEMPOOL TRANSFORM 转换
  */
 
 /*
@@ -155,7 +155,7 @@ enum pmempool_check_result pmempool_check_end(PMEMpoolcheck *ppc);
  * PMEMPOOL_MAJOR_VERSION and PMEMPOOL_MINOR_VERSION provide the current version
  * of the libpmempool API as provided by this header file.  Applications can
  * verify that the version available at run-time is compatible with the version
- * used at compile-time by passing these defines to pmempool_check_version().
+ * used at compile-time by passing these defines to pmempool_check_version(). 验证编译使用的版本和持久池中使用的版本是否兼容
  */
 #define PMEMPOOL_MAJOR_VERSION 1
 #define PMEMPOOL_MINOR_VERSION 3
@@ -232,7 +232,7 @@ struct pmempool_check_statusW *pmempool_checkW(PMEMpoolcheck *ppc);
  */
 
 /*
- * Synchronize data between replicas within a poolset.
+ * Synchronize data between replicas within a poolset. 在池集中的副本之间同步数据。
  *
  * EXPERIMENTAL
  */
@@ -244,7 +244,7 @@ int pmempool_syncW(const wchar_t *poolset_file, unsigned flags);
 #endif
 
 /*
- * Modify internal structure of a poolset.
+ * Modify internal structure of a poolset. 修改池集的内部结构。
  *
  * EXPERIMENTAL
  */

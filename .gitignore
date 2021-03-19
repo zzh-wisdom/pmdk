@@ -29,3 +29,6 @@ nbproject/
 *.aps
 tags
 *.link
+
+pmem-fs
+bin

@@ -2,7 +2,7 @@
 /* Copyright 2014-2020, Intel Corporation */
 
 /*
- * libpmemobj/pool.h -- definitions of libpmemobj pool macros
+ * libpmemobj/pool.h -- definitions of libpmemobj pool macros  libpmemobj池宏的定义
  */
 
 #ifndef LIBPMEMOBJ_POOL_H
