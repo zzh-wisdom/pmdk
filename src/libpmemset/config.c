@@ -10,7 +10,6 @@
 
 #include "alloc.h"
 #include "config.h"
-#include "event.h"
 #include "out.h"
 #include "pmemset_utils.h"
 
@@ -21,6 +20,9 @@ struct pmemset_config {
 	bool set_granularity_valid;
 	enum pmem2_granularity set_granularity;
 	bool part_coalescing;
+	pmemset_event_callback *callback;
+	void *arg;
+	struct pmem2_vm_reservation *set_reservation;
 };
 
 /*
@@ -31,6 +33,9 @@ pmemset_config_init(struct pmemset_config *cfg)
 {
 	cfg->set_granularity_valid = false;
 	cfg->part_coalescing = false;
+	cfg->callback = NULL;
+	cfg->arg = NULL;
+	cfg->set_reservation = NULL;
 }
 
 /*
@@ -75,23 +80,50 @@ pmemset_config_new(struct pmemset_config **cfg)
 }
 
 /*
- * pmemset_config_set_event_callback -- not supported
+ * pmemset_config_set_event_callback -- set an callback in the config
  */
-int
+void
 pmemset_config_set_event_callback(struct pmemset_config *cfg,
 		pmemset_event_callback *callback, void *arg)
 {
-	return PMEMSET_E_NOSUPP;
+	cfg->callback = callback;
+	cfg->arg = arg;
 }
 
 /*
- * pmemset_config_set_reservation -- not supported
+ * pmemset_config_event_callback -- call user provided callback
  */
 int
+pmemset_config_event_callback(struct pmemset_config *cfg,
+	struct pmemset *set, struct pmemset_event_context *ctx)
+{
+	if (!cfg->callback)
+		return 0;
+
+	return cfg->callback(set, ctx, cfg->arg);
+}
+
+/*
+ * pmemset_config_set_reservation -- set virtual memory reservation in the
+ *                                   config
+ */
+void
 pmemset_config_set_reservation(struct pmemset_config *cfg,
 		struct pmem2_vm_reservation *rsv)
 {
-	return PMEMSET_E_NOSUPP;
+	LOG(3, "config %p reservation %p", cfg, rsv);
+
+	cfg->set_reservation = rsv;
+}
+
+/*
+ * pmemset_config_get_reservation -- get virtual memory reservation from the
+ *                                   config
+ */
+struct pmem2_vm_reservation *
+pmemset_config_get_reservation(struct pmemset_config *config)
+{
+	return config->set_reservation;
 }
 
 /*
@@ -114,48 +146,6 @@ pmemset_config_get_contiguous_part_coalescing(
 		struct pmemset_config *cfg)
 {
 	return cfg->part_coalescing;
-}
-
-#ifndef _WIN32
-/*
- * pmemset_config_set_layout_name -- not supported
- */
-int
-pmemset_config_set_layout_name(struct pmemset_config *cfg,
-		const char *layout)
-{
-	return PMEMSET_E_NOSUPP;
-}
-#else
-/*
- * pmemset_config_set_layout_nameU -- not supported
- */
-int
-pmemset_config_set_layout_nameU(struct pmemset_config *cfg,
-		const char *layout)
-{
-	return PMEMSET_E_NOSUPP;
-}
-
-/*
- * pmemset_config_set_layout_nameW -- not supported
- */
-int
-pmemset_config_set_layout_nameW(struct pmemset_config *cfg,
-		const wchar_t *layout)
-{
-	return PMEMSET_E_NOSUPP;
-}
-#endif
-
-/*
- * pmemset_config_set_version -- not supported
- */
-int
-pmemset_config_set_version(struct pmemset_config *cfg,
-		int major, int minor)
-{
-	return PMEMSET_E_NOSUPP;
 }
 
 /*
@@ -213,6 +203,9 @@ pmemset_config_duplicate(struct pmemset_config **cfg_dst,
 	/* Copy cfg */
 	(*cfg_dst)->set_granularity = cfg_src->set_granularity;
 	(*cfg_dst)->set_granularity_valid = cfg_src->set_granularity_valid;
+	(*cfg_dst)->set_reservation = cfg_src->set_reservation;
+	(*cfg_dst)->callback = cfg_src->callback;
+	(*cfg_dst)->arg = cfg_src->arg;
 
 	return 0;
 }

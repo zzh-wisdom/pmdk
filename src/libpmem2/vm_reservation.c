@@ -183,6 +183,7 @@ pmem2_vm_reservation_delete(struct pmem2_vm_reservation **rsv_ptr)
 
 	vm_reservation_fini(rsv);
 	Free(rsv);
+	*rsv_ptr = NULL;
 
 	return 0;
 }
@@ -207,10 +208,113 @@ pmem2_vm_reservation_map_find(struct pmem2_vm_reservation *rsv,
 
 	struct ravl_interval_node *node;
 	node = ravl_interval_find(rsv->itree, &dummy_map);
-	if (!node)
+	if (!node) {
+		ERR("mapping not found at the range (offset %zu, size %zu) in" \
+				" reservation %p", reserv_offset, len, rsv);
 		return PMEM2_E_MAPPING_NOT_FOUND;
+	}
 
 	*map = (struct pmem2_map *)ravl_interval_data(node);
+
+	return 0;
+}
+
+/*
+ * pmem2_vm_reservation_map_find_prev -- find the closest mapping preceding the
+ *                                       provided one
+ */
+int
+pmem2_vm_reservation_map_find_prev(struct pmem2_vm_reservation *rsv,
+		struct pmem2_map *map, struct pmem2_map **prev_map)
+{
+	PMEM2_ERR_CLR();
+	LOG(3, "reservation %p map %p prev_map %p", rsv, map, prev_map);
+
+	*prev_map = NULL;
+
+	struct ravl_interval_node *node;
+	node = ravl_interval_find_prev(rsv->itree, map);
+	if (!node) {
+		ERR("mapping previous to mapping %p not found", map);
+		return PMEM2_E_MAPPING_NOT_FOUND;
+	}
+
+	*prev_map = (struct pmem2_map *)ravl_interval_data(node);
+
+	return 0;
+}
+
+/*
+ * pmem2_vm_reservation_map_find_next -- find the closest mapping succeeding
+ *                                       the provided one
+ */
+int
+pmem2_vm_reservation_map_find_next(struct pmem2_vm_reservation *rsv,
+		struct pmem2_map *map, struct pmem2_map **next_map)
+{
+	PMEM2_ERR_CLR();
+	LOG(3, "reservation %p map %p next_map %p", rsv, map, next_map);
+
+	*next_map = NULL;
+
+	struct ravl_interval_node *node;
+	node = ravl_interval_find_next(rsv->itree, map);
+	if (!node) {
+		ERR("mapping next to mapping %p not found", map);
+		return PMEM2_E_MAPPING_NOT_FOUND;
+	}
+
+	*next_map = (struct pmem2_map *)ravl_interval_data(node);
+
+	return 0;
+}
+
+/*
+ * pmem2_vm_reservation_map_find_first -- find the first mapping in the
+ *                                        reservation
+ */
+int
+pmem2_vm_reservation_map_find_first(struct pmem2_vm_reservation *rsv,
+		struct pmem2_map **first_map)
+{
+	PMEM2_ERR_CLR();
+	LOG(3, "reservation %p map %p", rsv, first_map);
+
+	*first_map = NULL;
+
+	struct ravl_interval_node *node;
+	node = ravl_interval_find_first(rsv->itree);
+	if (!node) {
+		ERR("reservation %p stores no mapping", rsv);
+		return PMEM2_E_MAPPING_NOT_FOUND;
+	}
+
+	*first_map = (struct pmem2_map *)ravl_interval_data(node);
+
+	return 0;
+}
+
+/*
+ * pmem2_vm_reservation_map_find_last -- find the last mapping in the
+ *                                       reservation
+ */
+int
+pmem2_vm_reservation_map_find_last(struct pmem2_vm_reservation *rsv,
+		struct pmem2_map **last_map)
+{
+	PMEM2_ERR_CLR();
+	LOG(3, "reservation %p pmem2_map %p", rsv, last_map);
+
+	*last_map = NULL;
+
+	struct ravl_interval_node *node;
+	node = ravl_interval_find_last(rsv->itree);
+	if (!node) {
+		ERR("reservation %p stores no mapping", rsv);
+		return PMEM2_E_MAPPING_NOT_FOUND;
+	}
+
+	*last_map = (struct pmem2_map *)ravl_interval_data(node);
 
 	return 0;
 }
@@ -227,7 +331,7 @@ vm_reservation_map_register_release(struct pmem2_vm_reservation *rsv,
 	int ret = ravl_interval_insert(rsv->itree, map);
 	if (ret == -EEXIST) {
 		ERR(
-			"mapping at the given region of the reservation already exist");
+			"mapping at the given region of the reservation already exists");
 		ret = PMEM2_E_MAPPING_EXISTS;
 	}
 

@@ -29,8 +29,8 @@ _UW(pmemset_source_from_file)
 ```c
 #include <libpmemset.h>
 
-_UWFUNCR1(int, pmemset_source_from_file, struct pmemset_source **src, const char *file)
-_UWFUNCR1(int, pmemset_xsource_from_file, struct pmemset_source **src, const char *file, unsigned flags)
+_UWFUNCR20(int, pmemset_source_from_file, struct pmemset_source **src, *file)
+_UWFUNCR2(int, pmemset_xsource_from_file, struct pmemset_source **src, *file, unsigned flags)
 int pmemset_source_delete(struct pmemset_source **src);
 
 ```
@@ -39,15 +39,18 @@ int pmemset_source_delete(struct pmemset_source **src);
 
 _UW(pmemset_source_from_file) function instantiates a new *struct pmemset_source** object
 describing the data source and sets a path to the file in it.
-_UW(pmemset_source_from_file) is equivalent to _UW(pmemset_xsource_from_file), but with
+_UW(pmemset_xsource_from_file) is equivalent to _UW(pmemset_source_from_file), but with
 additional *flags* argument that is a bitmask of the following values:
 
 * **PMEMSET_SOURCE_FILE_CREATE_IF_NEEDED** - a new file will be created only if the specified file does not already exist,
 
-* **PMEMSET_SOURCE_FILE_CREATE_ALWAYS** - always a new file will be created. If the specified file exists, the file will be overwritten.
+* **PMEMSET_SOURCE_FILE_CREATE_ALWAYS** - always a new file will be created. If the specified file exists, the file will be overwritten,
 
-Obtained source is ready to be passed on to the **pmemset_part_new**() function.
-See **pmemset_part_new**(3) for details.
+* **PMEMSET_SOURCE_FILE_TRUNCATE_IF_NEEDED** - the specified file will be truncated during **pmemset_map**(3) to
+designated part size and offset.
+
+Obtained source is ready to be passed on to the **pmemset_map_config_new**() function.
+See **pmemset_map_config_new**(3) for details.
 
 The **pmemset_source_delete**() function frees *\*src* and sets *\*src* to NULL. If *\*src* is NULL, no operation is performed.
 
@@ -63,7 +66,7 @@ The **pmemset_source_delete**() function always returns 0.
 The _UW(pmemset_source_from_file) and _UW(pmemset_xsource_from_file) can fail
 with the following errors:
 
-* **PMEMSET_E_INVALID_FILE_PATH** - when the provided file path string is NULL.
+* **PMEMSET_E_INVALID_SOURCE_PATH** - when the provided file path string is NULL.
 
 * **-ENOMEM** - in case of insufficient memory to allocate an instance
 of *struct pmemset_source*.
@@ -75,4 +78,5 @@ parameter.
 
 # SEE ALSO #
 
-**pmemset_part_new**(3), **libpmemset**(7) and **<http://pmem.io>**
+**pmemset_map**(3), **pmemset_map_config_new**(3),
+**libpmemset**(7) and **<http://pmem.io>**

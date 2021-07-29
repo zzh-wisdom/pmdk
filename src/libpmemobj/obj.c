@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-/* Copyright 2014-2020, Intel Corporation */
+/* Copyright 2014-2021, Intel Corporation */
 
 /*
  * obj.c -- transactional object store implementation
@@ -64,6 +64,7 @@ static struct critnib *pools_ht; /* hash table used for searching by UUID */
 static struct critnib *pools_tree; /* tree used for searching by address */
 
 int _pobj_cache_invalidate;
+static os_mutex_t pools_mutex;
 
 #ifndef _WIN32
 
@@ -267,6 +268,8 @@ obj_init(void)
 
 	COMPILE_ERROR_ON(PMEMOBJ_F_MEM_NOFLUSH != PMEM_F_MEM_NOFLUSH);
 
+	os_mutex_init(&pools_mutex);
+
 #ifdef _WIN32
 	/* XXX - temporary implementation (see above) */
 	os_once(&Cached_pool_key_once, _Cached_pool_key_alloc);
@@ -276,6 +279,7 @@ obj_init(void)
 	 * subsequent call to this function for individual pools.
 	 */
 	ctl_global_register();
+	pmalloc_global_ctl_register();
 
 	if (obj_ctl_init_and_load(NULL))
 		FATAL("error: %s", pmemobj_errormsg());
@@ -301,6 +305,8 @@ obj_fini(void)
 		critnib_delete(pools_tree);
 	lane_info_destroy();
 	util_remote_fini();
+
+	os_mutex_destroy(&pools_mutex);
 
 #ifdef _WIN32
 	(void) os_tls_key_delete(Cached_pool_key);
@@ -1323,6 +1329,8 @@ pmemobj_createU(const char *path, const char *layout,
 		return NULL;
 	}
 
+	os_mutex_lock(&pools_mutex);
+
 	/*
 	 * A number of lanes available at runtime equals the lowest value
 	 * from all reported by remote replicas hosts. In the single host mode
@@ -1344,6 +1352,7 @@ pmemobj_createU(const char *path, const char *layout,
 			PMEMOBJ_MIN_PART, &adj_pool_attr, &runtime_nlanes,
 			REPLICAS_ENABLED) != 0) {
 		LOG(2, "cannot create pool or pool set");
+		os_mutex_unlock(&pools_mutex);
 		return NULL;
 	}
 
@@ -1397,6 +1406,7 @@ pmemobj_createU(const char *path, const char *layout,
 	util_poolset_fdclose(set);
 
 	LOG(3, "pop %p", pop);
+	os_mutex_unlock(&pools_mutex);
 
 	return pop;
 
@@ -1406,6 +1416,7 @@ err:
 	if (set->remote)
 		obj_cleanup_remote(pop);
 	util_poolset_close(set, DELETE_CREATED_PARTS);
+	os_mutex_unlock(&pools_mutex);
 	errno = oerrno;
 	return NULL;
 }
@@ -1707,6 +1718,8 @@ obj_open_common(const char *path, const char *layout, unsigned flags, int boot)
 	PMEMobjpool *pop = NULL;
 	struct pool_set *set;
 
+	os_mutex_lock(&pools_mutex);
+
 	/*
 	 * A number of lanes available at runtime equals the lowest value
 	 * from all reported by remote replicas hosts. In the single host mode
@@ -1715,8 +1728,10 @@ obj_open_common(const char *path, const char *layout, unsigned flags, int boot)
 	 * environment variable whichever is lower.
 	 */
 	unsigned runtime_nlanes = obj_get_nlanes();
-	if (obj_pool_open(&set, path, flags, &runtime_nlanes))
+	if (obj_pool_open(&set, path, flags, &runtime_nlanes)) {
+		os_mutex_unlock(&pools_mutex);
 		return NULL;
+	}
 
 	/* pop is master replica from now on */
 	pop = set->replica[0]->part[0].addr;
@@ -1769,6 +1784,7 @@ obj_open_common(const char *path, const char *layout, unsigned flags, int boot)
 #endif
 
 	util_poolset_fdclose(set);
+	os_mutex_unlock(&pools_mutex);
 
 	LOG(3, "pop %p", pop);
 
@@ -1781,6 +1797,7 @@ err_descr_check:
 	obj_replicas_fini(set);
 replicas_init:
 	obj_pool_close(set);
+	os_mutex_unlock(&pools_mutex);
 	return NULL;
 }
 
@@ -1941,7 +1958,7 @@ pmemobj_close(PMEMobjpool *pop)
 	LOG(3, "pop %p", pop);
 	PMEMOBJ_API_START();
 
-	_pobj_cache_invalidate++;
+	os_mutex_lock(&pools_mutex);
 
 	if (critnib_remove(pools_ht, pop->uuid_lo) != pop) {
 		ERR("critnib_remove for pools_ht");
@@ -1969,7 +1986,12 @@ pmemobj_close(PMEMobjpool *pop)
 
 #endif /* _WIN32 */
 
+	VALGRIND_HG_DRD_DISABLE_CHECKING(&_pobj_cache_invalidate,
+		sizeof(_pobj_cache_invalidate));
+	_pobj_cache_invalidate++;
+
 	obj_pool_cleanup(pop);
+	os_mutex_unlock(&pools_mutex);
 	PMEMOBJ_API_END();
 }
 

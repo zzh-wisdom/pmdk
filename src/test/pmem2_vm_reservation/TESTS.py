@@ -382,3 +382,47 @@ class TEST43(PMEM2_VM_RESERVATION):
     3. (reserv_start, reserv_end)
     """
     test_case = "test_vm_reserv_two_maps_find"
+
+
+class TEST44(PMEM2_VM_RESERVATION):
+    """
+    create a reservation with exactly the size of a 10x file size and map a
+    file to it 5 times leaving equal space between each mapping, search the
+    reservation for previous mapping for each mapping
+    """
+    test_case = "test_vm_reserv_prev_map_find"
+
+
+class TEST45(PMEM2_VM_RESERVATION):
+    """
+    create a reservation with exactly the size of a 10x file size and map a
+    file to it 5 times leaving equal space between each mapping, search the
+    reservation for next mapping for each mapping
+    """
+    test_case = "test_vm_reserv_next_map_find"
+
+
+class TEST46(PMEM2_VM_RESERVATION):
+    """
+    create a reservation with exactly the size of a 10x file size and map a
+    file to it 5 times leaving equal space between each mapping, search the
+    reservation for next mapping for each mapping
+    """
+    test_case = "test_vm_reserv_not_existing_prev_next_map_find"
+
+
+class TEST47(PMEM2_VM_RESERVATION):
+    """
+    create a reservation with exactly the size of 1 file size and map a file to
+    it, search for the first and last mapping in the reservation
+    """
+    test_case = "test_vm_reserv_same_first_last_map_find"
+
+
+class TEST48(PMEM2_VM_RESERVATION):
+    """
+    create a reservation with exactly the size of 10 file size and map a file
+    10 times to it, search for the first and last mapping in the reservation
+    and delete them, repeat until no mappings are left
+    """
+    test_case = "test_vm_reserv_first_last_map_find"

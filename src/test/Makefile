@@ -96,6 +96,7 @@ OBJ_TESTS = \
 	obj_pool\
 	obj_pool_lock\
 	obj_pool_lookup\
+	obj_pool_open_mt\
 	obj_recovery\
 	obj_recreate\
 	obj_root\
@@ -299,8 +300,10 @@ PMREORDER_TESTS = \
 PMEMSET_TESTS = \
 	pmemset_config\
 	pmemset_deep_flush\
+	pmemset_event\
 	pmemset_file\
 	pmemset_include\
+	pmemset_map_config\
 	pmemset_memcpy\
 	pmemset_memmove\
 	pmemset_memset\

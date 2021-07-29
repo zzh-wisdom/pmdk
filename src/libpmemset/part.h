@@ -7,12 +7,20 @@
 #ifndef PMEMSET_PART_H
 #define PMEMSET_PART_H
 
-struct pmemset_part;
+#include "file.h"
+
 struct pmemset_part_map {
 	struct pmemset_part_descriptor desc;
 	struct pmem2_vm_reservation *pmem2_reserv;
 	int refcount;
 };
+
+/*
+ * typedef for callback function invoked on each iteration of pmem2 mapping
+ * stored in the part mapping
+ */
+typedef int pmemset_part_map_iter_cb(struct pmemset_part_map *pmap,
+		struct pmem2_map *map, void *arg);
 
 /*
  * Shutdown state data must be stored by the user externally for reliability.
@@ -23,14 +31,25 @@ struct pmemset_part_shutdown_state_data {
 	const char data[1024];
 };
 
-struct pmemset *pmemset_part_get_pmemset(struct pmemset_part *part);
+struct pmemset *pmemset_map_config_get_set(struct pmemset_map_config *map_cfg);
 
-int pmemset_part_map_new(struct pmemset_part_map **part_map,
-		struct pmemset_part *part, enum pmem2_granularity gran,
-		enum pmem2_granularity *mapping_gran,
-		struct pmemset_part_map *prev_pmap,
-		enum pmemset_coalescing part_coalescing);
+int pmemset_part_map_new(struct pmemset_part_map **pmap_ptr,
+		struct pmem2_vm_reservation *pmem2_reserv, size_t offset,
+		size_t size);
 
-void pmemset_part_map_delete(struct pmemset_part_map **part_map);
+int pmemset_part_map_delete(struct pmemset_part_map **pmap_ptr);
+
+int pmemset_part_map_iterate(struct pmemset_part_map *pmap, size_t offset,
+		size_t size, size_t *out_offset, size_t *out_size,
+		pmemset_part_map_iter_cb cb, void *arg);
+
+int pmemset_part_map_remove_range(struct pmemset_part_map *pmap, size_t offset,
+		size_t size, size_t *out_offset, size_t *out_size);
+
+int pmemset_part_file_try_ensure_size(struct pmemset_file *f,
+		size_t len, size_t off, size_t source_size);
+
+int pmemset_part_map_find(struct pmemset_part_map *pmap, size_t offset,
+		size_t size, struct pmem2_map **p2map);
 
 #endif /* PMEMSET_PART_H */
